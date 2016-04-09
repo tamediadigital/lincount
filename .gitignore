@@ -6,7 +6,7 @@ __dummy.html
 
 dub.selections.json
 
-lincount
+./lincount
 
 *.sublime-project
 
