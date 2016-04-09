@@ -59,4 +59,11 @@ struct LPCounter
 		else
 			return map.length;
 	}
+
+	//returns the size of the underlying BitArray in KB
+	@property size_t size()
+	{
+		return map.length() / (8 * 1024);
+	}
+
 }
