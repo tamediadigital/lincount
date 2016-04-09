@@ -1,5 +1,5 @@
 # lincount
-Linear Counting for Dlang
+Probabilistic Linear Counting for Dlang
 
 ```D
 auto counter = LPCounter(32); // 32 kilobytes for internal BitArray
@@ -13,3 +13,6 @@ auto counter = LPCounter(32); // 32 kilobytes for internal BitArray
 
 size_t count = counter.count;
 ```
+
+## Licence:
+www.boost.org/LICENSE_1_0.txt, Boost License 1.0
