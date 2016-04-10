@@ -10,7 +10,7 @@ struct LPCounter
 
 	@disable this();
 
-	private void set(size_t index)
+	private void set(size_t index) pure nothrow @nogc
 	{
 		if(map[index] == false)
 		{
@@ -19,30 +19,39 @@ struct LPCounter
 		}
 	}
 
-	this(size_t kilobytes)
+	this(size_t kilobytes) pure nothrow
 	{
 		map.length = 8 * 1024 * kilobytes;
 		_length = 0;
 	}
 
-	void put(uint data)
+	this(void[] dump) pure
+	{
+		if (dump.length % 1024)
+			throw new Exception("LPCounter: dump is broken.");
+		map = BitArray(dump, dump.length * 8);
+		import std.range.primitives: walkLength;
+		_length = map.bitsSet.walkLength;
+	}
+
+	void put(uint data) pure nothrow @nogc
 	{
 		import lincount.internal: fmix;
 		set(cast(size_t)(fmix(data) % map.length));
 	}
 
-	void put(ulong data)
+	void put(ulong data) pure nothrow @nogc
 	{
 		import lincount.internal: fmix;
 		set(cast(size_t)(fmix(data) % map.length));
 	}
 
-	void put(UUID data)
+	void put(UUID data) pure nothrow @nogc
 	{
 		set(data.toHash % map.length);
 	}
 
-	void put(in void[] data)
+	void put(in void[] data) pure nothrow @nogc
 	{
 		//hashOf(data);
 		import std.digest.digest: digest;
@@ -51,7 +60,7 @@ struct LPCounter
 		set((hashed[0] ^ hashed[1]) % map.length);
 	}
 
-	ulong count()
+	ulong count() nothrow @nogc
 	{
 		import std.math: log, lround;
 		if(map.length > _length)
@@ -61,9 +70,16 @@ struct LPCounter
 	}
 
 	//returns the size of the underlying BitArray in KB
-	@property size_t size()
+	@property size_t size() pure nothrow @nogc
 	{
 		return map.length() / (8 * 1024);
 	}
 
+	const(ubyte)[] dump() pure nothrow @nogc
+	out(res) {
+		assert(res.length % 1024 == 0);
+	}
+	body {
+		return cast(ubyte[]) cast(void[]) map;
+	}
 }
