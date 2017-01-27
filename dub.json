@@ -4,4 +4,7 @@
     "copyright": "Copyright © 2016 Tamedia AG",
     "authors": ["Ilya Yaroshenko"],
     "license": "BSL-1.0",
+    "dependencies": {
+        "mir-algorithm": "~>0.0.13"
+    }
 }

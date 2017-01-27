@@ -2,10 +2,16 @@ module lincount;
 
 struct LPCounter
 {
-	import std.bitmanip: BitArray;
+	import mir.ndslice.allocation: slice;
+	import mir.ndslice.algorithm: count;
+	import mir.ndslice.slice;
+	import mir.ndslice.field: BitwiseField;
+	import mir.ndslice.iterator: FieldIterator;
+	import mir.ndslice.topology: bitwise;
+
 	import std.uuid: UUID;
 
-	private BitArray map;
+	private Slice!(SliceKind.contiguous, [1], FieldIterator!(BitwiseField!(size_t*))) map;
 	private size_t _length = 0;
 
 	@disable this();
@@ -21,7 +27,7 @@ struct LPCounter
 
 	this(size_t kilobytes) pure nothrow
 	{
-		map.length = 8 * 1024 * kilobytes;
+		map = slice!size_t(1024 * kilobytes / size_t.sizeof).bitwise;
 		_length = 0;
 	}
 
@@ -29,9 +35,8 @@ struct LPCounter
 	{
 		if (dump.length % 1024)
 			throw new Exception("LPCounter: dump is broken.");
-		map = BitArray(dump, dump.length * 8);
-		import std.range.primitives: walkLength;
-		_length = map.bitsSet.walkLength;
+		map = sliced(cast(size_t[])dump).bitwise;
+		_length = map.count!"a"; // uses popcnt
 	}
 
 	void put(uint data) pure nothrow @nogc
@@ -79,7 +84,7 @@ struct LPCounter
 	//returns the size of the underlying BitArray in KB
 	@property size_t size() pure nothrow @nogc
 	{
-		return map.length() / (8 * 1024);
+		return map.length() / (size_t.sizeof * 1024);
 	}
 
 	const(ubyte)[] dump() pure nothrow @nogc
@@ -87,7 +92,7 @@ struct LPCounter
 		assert(res.length % 1024 == 0);
 	}
 	body {
-		return cast(ubyte[]) cast(void[]) map;
+		return cast(ubyte[]) map._iterator._field._field[0 .. map.length / (size_t.sizeof * 8)];
 	}
 }
 
