@@ -36,13 +36,11 @@ struct LPCounter
 
 	void put(uint data) pure nothrow @nogc
 	{
-		import lincount.internal: fmix;
 		set(cast(size_t)(fmix(data) % map.length));
 	}
 
 	void put(ulong data) pure nothrow @nogc
 	{
-		import lincount.internal: fmix;
 		set(cast(size_t)(fmix(data) % map.length));
 	}
 
@@ -55,8 +53,8 @@ struct LPCounter
 	{
 		//hashOf(data);
 		import std.digest.digest: digest;
-		import lincount.internal: MurmurHash3_x64_128;
-		auto hashed = cast(ulong[2])digest!MurmurHash3_x64_128(data);
+		import std.digest.murmurhash: MurmurHash3;
+		auto hashed = cast(ulong[2])digest!(MurmurHash3!(128, 64))(data);
 		set((hashed[0] ^ hashed[1]) % map.length);
 	}
 
@@ -82,4 +80,27 @@ struct LPCounter
 	body {
 		return cast(ubyte[]) cast(void[]) map;
 	}
+}
+
+// Murmurhash mix
+private:
+
+uint fmix(uint h) pure nothrow @nogc
+{
+    h ^= h >> 16;
+    h *= 0x85ebca6b;
+    h ^= h >> 13;
+    h *= 0xc2b2ae35;
+    h ^= h >> 16;
+    return h;
+}
+
+ulong fmix(ulong k) pure nothrow @nogc
+{
+    k ^= k >> 33;
+    k *= 0xff51afd7ed558ccd;
+    k ^= k >> 33;
+    k *= 0xc4ceb9fe1a85ec53;
+    k ^= k >> 33;
+    return k;
 }
