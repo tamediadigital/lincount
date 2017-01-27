@@ -1,7 +1,7 @@
 {
-	"name": "lincount",
-	"description": "Linear Counting for Dlang",
-	"copyright": "Copyright © 2016 Tamedia AG",
-	"authors": ["Ilya Yaroshenko"],
-	"license": "BSL-1.0",
+    "name": "lincount",
+    "description": "Linear Counting for Dlang",
+    "copyright": "Copyright © 2016 Tamedia AG",
+    "authors": ["Ilya Yaroshenko"],
+    "license": "BSL-1.0",
 }
