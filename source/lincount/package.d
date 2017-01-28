@@ -30,7 +30,7 @@ struct LPCounter
 		}
 	}
 
-	/// Constructs counter with appropriate volume.
+	/// Constructs counter with appropriate size.
 	this(size_t kilobytes) pure nothrow
 	{
 		map = slice!size_t(1024 * kilobytes / size_t.sizeof).bitwise;
@@ -100,14 +100,11 @@ struct LPCounter
 			return map.length;
 	}
 
-	/// Returns: volume of the counter in kilobytes.
-	size_t volume() @property pure nothrow @nogc
+	/// Returns: size of the counter in kilobytes.
+	size_t size() @property pure nothrow @nogc
 	{
 		return map.length() / (size_t.sizeof * 1024);
 	}
-
-	deprecated("Use LPCounter.volume instead.")
-	alias size = volume;
 
 	/// Returns: raw representation of a counter.
 	const(ubyte)[] dump() const pure nothrow @nogc
@@ -134,7 +131,7 @@ unittest
 /++
 Merges a range of $(LREF LPCounter)s into a single one.
 Params:
-	counters = non empty range. All counters must have the same volumes.
+	counters = non empty range. All counters must have the same sizes.
 Returns: union counter
 +/
 LPCounter mergeLPCounters(Range)(Range counters)
@@ -148,7 +145,7 @@ LPCounter mergeLPCounters(Range)(Range counters)
 	foreach (counter; counters)
 	{
 		auto r = cast(const(size_t)[])counter.dump;
-		enforce (r.length == repr.length, "All counters must have the same volumes.");
+		enforce (r.length == repr.length, "All counters must have the same sizes.");
 		repr[] |= r[];
 	}
 	return LPCounter(repr);
