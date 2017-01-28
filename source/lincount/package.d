@@ -1,6 +1,5 @@
 module lincount;
 
-import std.range.primitives;
 import std.traits;
 
 /++
@@ -21,6 +20,12 @@ struct LPCounter
 
 	@disable this();
 
+	invariant
+	{
+		assert(map.length);
+		assert(map.length % (1024 * 8) == 0);
+	}
+
 	private void set(size_t index) pure nothrow @nogc
 	{
 		if(map[index] == false)
@@ -28,6 +33,12 @@ struct LPCounter
 			map[index] = true;
 			_length++;
 		}
+	}
+
+	private auto updateLength()
+	{
+		import mir.ndslice.algorithm: count;
+		_length = map.count!"a";  // uses popcnt / llvm_ctpop
 	}
 
 	/// Constructs counter with appropriate size.
@@ -47,8 +58,7 @@ struct LPCounter
 		if (dump.length % 1024)
 			throw new Exception("LPCounter: dump is broken.");
 		map = sliced(cast(size_t[])dump).bitwise;
-		import mir.ndslice.algorithm: count;
-		_length = map.count!"a"; // uses popcnt / llvm_ctpop
+		updateLength;
 	}
 
 	/++
@@ -90,6 +100,40 @@ struct LPCounter
 		set((hashed[0] ^ hashed[1]) % map.length);
 	}
 
+
+	/++
+	Merges a counter into this one.
+	Params:
+		counters = Counter with the same size.
+	+/
+	void opOpAssign(string op : "+")(const LPCounter counter)
+	{
+		import std.exception;
+		enforce(counter.size == size, "The size of counters must be the same.");
+		auto repr = cast(size_t[])dump;
+		repr[] |= (cast(const(size_t)[])counter.dump)[];
+		updateLength;
+	}
+
+	/++
+	Merges a set of $(LREF LPCounter)s into this one.
+	Params:
+		counters = An iterable set of counters. All counters must have the same sizes as this counter.
+	+/
+	void opOpAssign(string op : "+", Range)(Range counters)
+		if (isIterable!Range && (is(ForeachType!Range : const(LPCounter)) || is(ForeachType!Range : const(LPCounter)*)))
+	{
+		import std.exception;
+		auto repr = cast(size_t[])dump;
+		foreach (counter; counters)
+		{
+			auto r = cast(const(size_t)[])counter.dump;
+			enforce (r.length == repr.length, "All counters must have the same sizes.");
+			repr[] |= r[];
+		}
+		updateLength;
+	}
+
 	/// Returns: approximate number of elements.
 	ulong count() nothrow @nogc
 	{
@@ -101,7 +145,7 @@ struct LPCounter
 	}
 
 	/// Returns: size of the counter in kilobytes.
-	size_t size() @property pure nothrow @nogc
+	size_t size() const @property pure nothrow @nogc
 	{
 		return map.length() / (size_t.sizeof * 1024);
 	}
@@ -128,29 +172,6 @@ unittest
 	assert(counter.count == 4);
 }
 
-/++
-Merges a range of $(LREF LPCounter)s into a single one.
-Params:
-	counters = non empty range. All counters must have the same sizes.
-Returns: union counter
-+/
-LPCounter mergeLPCounters(Range)(Range counters)
-	if (isInputRange!Range && (is(ElementType!Range : const(LPCounter)) || is(ElementType!Range : const(LPCounter)*)))
-{
-	import std.exception;
-	enforce(!counters.empty, "Range of counters must not be empty");
-	auto repr = cast(size_t[])counters.front.dump.dup;
-	counters.popFront;
-	enforce(repr.length);
-	foreach (counter; counters)
-	{
-		auto r = cast(const(size_t)[])counter.dump;
-		enforce (r.length == repr.length, "All counters must have the same sizes.");
-		repr[] |= r[];
-	}
-	return LPCounter(repr);
-}
-
 ///
 unittest
 {
@@ -166,8 +187,13 @@ unittest
 	b.put("LP");
 	assert(b.count == 3);
 
-	auto c = mergeLPCounters([a, b]);
+	auto c = LPCounter(32);
+
+	c += [a, b];
 	assert(c.count == 5);
+
+	a += b;
+	assert(a.count == 5);
 }
 
 // Murmurhash mix
