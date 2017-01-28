@@ -4,17 +4,4 @@
 	"copyright": "Copyright © 2016 Tamedia AG",
 	"authors": ["Ilya Yaroshenko"],
 	"license": "BSL-1.0",
-
-    "configurations": [
-    {
-      "name": "lib",
-      "targetType": "sourceLibrary",
-      "sourcePaths": ["source"]
-    },
-    {
-      "name": "example",
-      "targetType": "executable",
-      "sourcePaths": ["source", "example"]
-    }
-  ]
 }

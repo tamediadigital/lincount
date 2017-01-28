@@ -52,9 +52,18 @@ struct LPCounter
 	void put(in void[] data) pure nothrow @nogc
 	{
 		//hashOf(data);
-		import std.digest.digest: digest;
-		import std.digest.murmurhash: MurmurHash3;
-		auto hashed = cast(ulong[2])digest!(MurmurHash3!(128, 64))(data);
+		static if (__VERSION__ >= 2072)
+		{
+			import std.digest.digest: digest;
+			import std.digest.murmurhash: MurmurHash3;
+			alias D = MurmurHash3!(128, 64);
+		}
+		else
+		{
+			import lincount.murmurhash;
+			alias D = MurmurHash3_x64_128;
+		}
+		auto hashed = cast(ulong[2])digest!D(data);
 		set((hashed[0] ^ hashed[1]) % map.length);
 	}
 
