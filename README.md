@@ -13,17 +13,5 @@ auto counter = LPCounter(32); // 32 kilobytes for internal BitArray
 size_t count = counter.count;
 ```
 
-### building the example:
-
-`dub build -c example`
-
-then generate a random file with newlines:
-
-`< /dev/urandom tr -dc "\t\n [:alnum:]" | head -n 100000 | ./lincount 128`
-
-or just
-
-`cat /some/file | sort | uniq | ./lincount`
-
 ## Licence:
 www.boost.org/LICENSE_1_0.txt, Boost License 1.0
